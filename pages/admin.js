@@ -22,6 +22,10 @@ const AdminPage = () => {
   const [categoryTags, setCategoryTags] = useState([]);
   const [svgMode, setSvgMode] = useState('upload');
   const [svgCode, setSvgCode] = useState('');
+  const [mcpUrl, setMcpUrl] = useState('');
+  const [mcpState, setMcpState] = useState(null);
+  const [mcpKeyPlaintext, setMcpKeyPlaintext] = useState('');
+  const [mcpBusy, setMcpBusy] = useState(false);
 
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
@@ -30,35 +34,31 @@ const AdminPage = () => {
     const data = await res.json();
     setEntries(data.entries || []);
   };
-  const [mcpUrl, setMcpUrl] = useState('');
-  const [mcpState, setMcpState] = useState(null);
-  const [mcpKeyPlaintext, setMcpKeyPlaintext] = useState('');
-  const [mcpBusy, setMcpBusy] = useState(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem('admin_token');
     if (saved) setToken(saved);
+    setMcpUrl(`${window.location.origin}/api/mcp`);
   }, []);
 
   useEffect(() => {
     if (token) fetchEntries();
   }, [token]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setMcpUrl(`${window.location.origin}/api/mcp`);
-    setLoginError('');
-    const res = await fetch('/api/_auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
   // The MCP panel is fetched on demand: it needs the admin token and is only
   // shown on its own tab.
   useEffect(() => {
     if (token && activeNav === 'mcp') loadMcpState();
   }, [token, activeNav]);
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    const res = await fetch('/api/_auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
     if (res.ok) {
       const data = await res.json();
       setToken(data.token);
@@ -223,14 +223,6 @@ const AdminPage = () => {
     sessionStorage.removeItem('admin_token');
   };
 
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setPwdError('');
-    setPwdSuccess('');
-    if (pwdForm.newPwd !== pwdForm.confirm) {
-      setPwdError('两次输入的新密码不一致');
-      return;
-    }
   const copyMcpText = async (value, successMessage) => {
     if (!value) return;
     try {
@@ -293,6 +285,14 @@ const AdminPage = () => {
   const formatMcpTime = value =>
     value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '暂无记录';
 
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    setPwdError('');
+    setPwdSuccess('');
+    if (pwdForm.newPwd !== pwdForm.confirm) {
+      setPwdError('两次输入的新密码不一致');
+      return;
+    }
     if (pwdForm.newPwd.length < 6) {
       setPwdError('新密码至少 6 位');
       return;
@@ -386,6 +386,13 @@ const AdminPage = () => {
               导航管理
             </a>
             <a
+              className={`saas-nav-item${activeNav === 'mcp' ? ' active' : ''}`}
+              onClick={() => setActiveNav('mcp')}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 9l-3 3 3 3"/><path d="M16 9l3 3-3 3"/><path d="M14 5l-4 14"/></svg>
+              MCP 接入
+            </a>
+            <a
               className={`saas-nav-item${activeNav === 'settings' ? ' active' : ''}`}
               onClick={() => setActiveNav('settings')}
             >
@@ -393,13 +400,6 @@ const AdminPage = () => {
               修改密码
             </a>
           </nav>
-            <a
-              className={`saas-nav-item${activeNav === 'mcp' ? ' active' : ''}`}
-              onClick={() => setActiveNav('mcp')}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 9l-3 3 3 3"/><path d="M16 9l3 3-3 3"/><path d="M14 5l-4 14"/></svg>
-              MCP 接入
-            </a>
           <div className="saas-sidebar-stats">
             <div className="saas-sidebar-stat">
               <span className="saas-sidebar-stat-value">{entries.length}</span>
@@ -504,14 +504,6 @@ const AdminPage = () => {
             </>
           )}
 
-          {activeNav === 'settings' && (
-            <div className="saas-settings">
-              <div className="saas-page-header">
-                <div>
-                  <h2 className="saas-page-title">修改密码</h2>
-                  <p className="saas-page-subtitle">更新管理后台的登录密码</p>
-                </div>
-              </div>
           {activeNav === 'mcp' && (
             <div className="saas-settings saas-mcp-page">
               <div className="saas-page-header saas-page-header-inset">
@@ -639,6 +631,14 @@ const AdminPage = () => {
             </div>
           )}
 
+          {activeNav === 'settings' && (
+            <div className="saas-settings">
+              <div className="saas-page-header">
+                <div>
+                  <h2 className="saas-page-title">修改密码</h2>
+                  <p className="saas-page-subtitle">更新管理后台的登录密码</p>
+                </div>
+              </div>
 
               <div className="pwd-card-wrapper">
                 <div className="pwd-card">

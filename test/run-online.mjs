@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 
 const SUITES = [
+  'admin-page-structure.mjs',
   'online-keys.mjs',
   'online-metadata.mjs',
   'online-oauth-client.mjs',
