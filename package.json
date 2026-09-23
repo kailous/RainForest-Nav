@@ -9,7 +9,17 @@
     "dev": "NODE_ENV=development next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "sync:shared": "node scripts/sync-shared.mjs",
+    "sync:icon-skill": "node scripts/generate-icon-skill.mjs",
+    "check:shared": "node scripts/sync-shared.mjs --check",
+    "check:icon-skill": "node scripts/generate-icon-skill.mjs --check",
+    "check:production-config": "node scripts/check-production-config.mjs",
+    "prebuild": "npm run sync:shared && npm run sync:icon-skill",
+    "test:online": "node --import ./test/ts-resolve-hook.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON test/run-online.mjs",
+    "test:blob": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON test/blob-semantics.mjs",
+    "test:integration": "node --import ./test/ts-resolve-hook.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON test/online-oauth-chatgpt.integration.mjs",
+    "test:upstash-integration": "node --import ./test/ts-resolve-hook.mjs --disable-warning=MODULE_TYPELESS_PACKAGE_JSON test/upstash-integration.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "^1.0.1",

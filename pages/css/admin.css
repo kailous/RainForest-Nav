@@ -616,6 +616,117 @@ body:has(.saas-modal-overlay) {
   opacity: 0.6;
 }
 
+/* ===== MCP Page ===== */
+.saas-mcp-page {
+  max-width: 920px;
+}
+
+.saas-page-header-inset {
+  padding: 0 0 24px;
+}
+
+.mcp-card {
+  background: var(--blur-bg-color);
+  border: 1px solid color-mix(in srgb, var(--text-main-color) 6%, transparent);
+  border-radius: 16px;
+  padding: 32px 36px;
+}
+
+.mcp-card h3 {
+  color: var(--text-main-color);
+  font-size: var(--font-size-md);
+  margin: 18px 0 6px;
+}
+
+.mcp-status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--highlight-color) 8%, transparent);
+  color: var(--highlight-color);
+  font-size: var(--font-size-xs);
+}
+
+.mcp-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--highlight-color);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--highlight-color) 10%, transparent);
+}
+
+.mcp-copy-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mcp-copy-row code,
+.mcp-config-block {
+  background: color-mix(in srgb, var(--text-main-color) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--text-main-color) 7%, transparent);
+  border-radius: 10px;
+}
+
+.mcp-copy-row code {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 15px;
+  color: var(--highlight-color);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: var(--font-size-xs);
+  overflow-wrap: anywhere;
+}
+
+.mcp-config-title {
+  margin-top: 28px !important;
+}
+
+.mcp-config-block {
+  position: relative;
+  padding: 16px;
+}
+
+.mcp-config-block pre {
+  margin: 0 110px 0 0;
+  color: var(--text-color);
+  font: 400 var(--font-size-xs)/1.65 'SF Mono', 'Fira Code', monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mcp-config-block button {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+
+.mcp-auth-note {
+  margin-top: 24px;
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--highlight-color) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--highlight-color) 10%, transparent);
+  border-radius: 11px;
+}
+
+.mcp-auth-note strong {
+  display: block;
+  color: var(--text-main-color);
+  font-size: var(--font-size-sm);
+  margin-bottom: 6px;
+}
+
+.mcp-auth-note p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.mcp-auth-note code {
+  color: var(--highlight-color);
+}
+
 .saas-settings-form {
   display: flex;
   flex-direction: column;
@@ -1330,6 +1441,17 @@ body:has(.saas-modal-overlay) {
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+  .mcp-card {
+    padding: 24px 20px;
+  }
+  .mcp-copy-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .mcp-config-block pre {
+    margin-right: 0;
+    padding-top: 38px;
   }
   .saas-table-actions {
     opacity: 1;

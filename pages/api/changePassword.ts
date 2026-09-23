@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { list, put } from '@vercel/blob';
-import { getAuth } from './_auth';
+import { put } from '@vercel/blob';
+import { getAuth, getCurrentPassword, safeEqual } from './_auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
   if (req.method !== 'POST') {
@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const authError = getAuth(req);
+  const authError = await getAuth(req);
   if (authError) return res.status(401).json({ error: authError });
 
   const { currentPassword, newPassword } = req.body;
@@ -17,17 +17,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { blobs } = await list({ prefix: 'admin-password' });
-    if (blobs.length > 0) {
-      const blobRes = await fetch(blobs[0].url);
-      const data = await blobRes.json();
-      if (data.password !== currentPassword) {
-        return res.status(400).json({ error: '当前密码错误' });
-      }
-    } else {
-      if (currentPassword !== process.env.ADMIN_PASSWORD) {
-        return res.status(400).json({ error: '当前密码错误' });
-      }
+    const currentPwd = await getCurrentPassword();
+    if (!currentPwd) {
+      return res.status(500).json({ error: 'Password not configured' });
+    }
+    if (typeof currentPassword !== 'string' || !safeEqual(currentPassword, currentPwd)) {
+      return res.status(400).json({ error: '当前密码错误' });
     }
 
     await put('admin-password/pwd.json', JSON.stringify({ password: newPassword }), {

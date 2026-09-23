@@ -1,0 +1,23 @@
+{
+  "name": "rainforest-navigator",
+  "version": "2.4.0",
+  "description": "Query and manage RainForest Navigator Chrome-extension data through its OAuth-enabled cloud relay, with a website icon generation skill.",
+  "author": {
+    "name": "RainForest"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Rainforest Navigator",
+    "shortDescription": "Manage extension navigation through remote MCP.",
+    "longDescription": "Search, add, edit, delete, and apply generated SVG icons to entries stored in the RainForest Navigator Chrome extension, without running a local MCP process.",
+    "developerName": "RainForest",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": [
+      "Search my local RainForest navigation entries.",
+      "Add a site and generate a matching RainForest icon.",
+      "Update an entry in my Chrome extension."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

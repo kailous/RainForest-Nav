@@ -1,0 +1,15 @@
+{
+  "name": "rainforest-extension-mcp",
+  "version": "2.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "node --check src/index.js && wrangler deploy --dry-run",
+    "test:bridge": "node test/bridge.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.38.0"
+  }
+}

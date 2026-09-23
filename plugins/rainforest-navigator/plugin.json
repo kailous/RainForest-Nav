@@ -1,0 +1,33 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "rainforest-navigator",
+  "version": "2.4.0",
+  "description": "Query and manage navigation entries stored in the RainForest Navigator browser extension and generate matching SVG website icons.",
+  "author": {
+    "name": "RainForest",
+    "url": "https://nav.rainforest.org.cn"
+  },
+  "homepage": "https://nav.rainforest.org.cn",
+  "repository": "https://github.com/kailous/RainForest-Notion-Nav",
+  "license": "MIT",
+  "keywords": ["navigation", "bookmarks", "browser-extension", "icons"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "RainForest Navigator",
+        "shortDescription": "Manage browser-extension navigation with AI.",
+        "longDescription": "Search, add, edit, delete, and apply generated SVG icons to entries stored in the RainForest Navigator Chrome extension through an OAuth-secured remote MCP server.",
+        "developerName": "RainForest",
+        "category": "Productivity",
+        "capabilities": ["Read", "Write"],
+        "websiteURL": "https://nav.rainforest.org.cn",
+        "defaultPrompt": [
+          "Search my RainForest browser-extension navigation entries.",
+          "Add a site and generate a matching RainForest icon.",
+          "Update an entry stored in my browser extension."
+        ],
+        "brandColor": "#1D5D3C"
+      }
+    }
+  }
+}

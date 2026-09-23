@@ -30,6 +30,10 @@ const AdminPage = () => {
     const data = await res.json();
     setEntries(data.entries || []);
   };
+  const [mcpUrl, setMcpUrl] = useState('');
+  const [mcpState, setMcpState] = useState(null);
+  const [mcpKeyPlaintext, setMcpKeyPlaintext] = useState('');
+  const [mcpBusy, setMcpBusy] = useState(false);
 
   useEffect(() => {
     const saved = sessionStorage.getItem('admin_token');
@@ -42,12 +46,19 @@ const AdminPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setMcpUrl(`${window.location.origin}/api/mcp`);
     setLoginError('');
     const res = await fetch('/api/_auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ password }),
     });
+  // The MCP panel is fetched on demand: it needs the admin token and is only
+  // shown on its own tab.
+  useEffect(() => {
+    if (token && activeNav === 'mcp') loadMcpState();
+  }, [token, activeNav]);
+
     if (res.ok) {
       const data = await res.json();
       setToken(data.token);
@@ -220,6 +231,68 @@ const AdminPage = () => {
       setPwdError('两次输入的新密码不一致');
       return;
     }
+  const copyMcpText = async (value, successMessage) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setMessage(successMessage);
+    } catch {
+      setMessage('复制失败，请手动复制');
+    }
+  };
+
+  const mcpRequest = async (method, body) => {
+    const response = await fetch('/api/mcp/settings', {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!response.ok) {
+      const detail = await response.json().catch(() => ({}));
+      setMessage(detail.error || '操作失败');
+      return null;
+    }
+    return response.json();
+  };
+
+  const loadMcpState = async () => {
+    const state = await mcpRequest('GET');
+    if (state) setMcpState(state);
+  };
+
+  const runMcpAction = async action => {
+    setMcpBusy(true);
+    const result = await mcpRequest('POST', action);
+    if (result) {
+      // The plaintext key is only ever present on the response that creates it.
+      setMcpKeyPlaintext(result.key || '');
+      setMcpState(result);
+    }
+    setMcpBusy(false);
+  };
+
+  const copyLocalMcpConfig = () => {
+    copyMcpText(
+      JSON.stringify(
+        {
+          mcpServers: {
+            'rainforest-online': {
+              type: 'http',
+              url: mcpUrl,
+              headers: { Authorization: 'Bearer <线上 MCP 密钥>' },
+            },
+          },
+        },
+        null,
+        2,
+      ),
+      '本地客户端配置已复制',
+    );
+  };
+
+  const formatMcpTime = value =>
+    value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '暂无记录';
+
     if (pwdForm.newPwd.length < 6) {
       setPwdError('新密码至少 6 位');
       return;
@@ -320,6 +393,13 @@ const AdminPage = () => {
               修改密码
             </a>
           </nav>
+            <a
+              className={`saas-nav-item${activeNav === 'mcp' ? ' active' : ''}`}
+              onClick={() => setActiveNav('mcp')}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 9l-3 3 3 3"/><path d="M16 9l3 3-3 3"/><path d="M14 5l-4 14"/></svg>
+              MCP 接入
+            </a>
           <div className="saas-sidebar-stats">
             <div className="saas-sidebar-stat">
               <span className="saas-sidebar-stat-value">{entries.length}</span>
@@ -432,6 +512,133 @@ const AdminPage = () => {
                   <p className="saas-page-subtitle">更新管理后台的登录密码</p>
                 </div>
               </div>
+          {activeNav === 'mcp' && (
+            <div className="saas-settings saas-mcp-page">
+              <div className="saas-page-header saas-page-header-inset">
+                <div>
+                  <h2 className="saas-page-title">MCP 接入</h2>
+                  <p className="saas-page-subtitle">让 ChatGPT、Codex 或 Claude 查询和管理在线导航</p>
+                </div>
+              </div>
+
+              <div className="mcp-card">
+                <div className="mcp-status-row">
+                  <span
+                    className="mcp-status-dot"
+                    style={{ background: mcpState?.enabled ? 'var(--success-color)' : 'var(--text-color-light)' }}
+                  ></span>
+                  <span>{mcpState?.enabled ? '已开启' : '已关闭'}</span>
+                  <button
+                    type="button"
+                    className="saas-btn-ghost"
+                    onClick={() => runMcpAction({ action: 'set-enabled', enabled: !mcpState?.enabled })}
+                    disabled={mcpBusy || !mcpState?.hasKey}
+                  >
+                    {mcpState?.enabled ? '关闭接入' : '开启接入'}
+                  </button>
+                </div>
+                <p className="saas-settings-desc">
+                  开启后，持有下方密钥或已完成 OAuth 授权的 AI 客户端可以查询、添加、修改和删除在线导航。
+                  关闭会立即撤销全部已授权的访问令牌。此开关与浏览器插件的 MCP 接入互不影响。
+                </p>
+
+                <h3 className="mcp-config-title">线上 MCP 密钥</h3>
+                {!mcpState?.hasKey ? (
+                  <>
+                    <p className="saas-settings-desc">
+                      还没有密钥。生成后请立即复制保存——服务端只保存哈希，之后无法再次查看完整密钥。
+                    </p>
+                    <button
+                      type="button"
+                      className="saas-btn-primary"
+                      onClick={() => runMcpAction({ action: 'generate-key' })}
+                      disabled={mcpBusy}
+                    >
+                      生成密钥
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="mcp-copy-row">
+                      <code>{mcpKeyPlaintext || `rfn_live_••••••••••••${mcpState.keyLast4}`}</code>
+                      <button
+                        type="button"
+                        className="saas-btn-ghost"
+                        onClick={() => copyMcpText(mcpKeyPlaintext, '密钥已复制')}
+                        disabled={!mcpKeyPlaintext}
+                      >
+                        复制密钥
+                      </button>
+                      <button
+                        type="button"
+                        className="saas-btn-ghost"
+                        onClick={() => runMcpAction({ action: 'rotate-key' })}
+                        disabled={mcpBusy}
+                      >
+                        重新生成
+                      </button>
+                    </div>
+                    <p className="saas-settings-desc">
+                      {mcpKeyPlaintext
+                        ? '完整密钥只在本次显示，刷新页面后只能看到末四位。'
+                        : '完整密钥无法再次查看。如果遗失，请重新生成。'}
+                      {' '}创建于 {formatMcpTime(mcpState.keyCreatedAt)} · 密钥版本 {mcpState.credentialVersion}
+                    </p>
+                  </>
+                )}
+
+                <h3 className="mcp-config-title">在 ChatGPT 中添加</h3>
+                <ol className="saas-settings-desc" style={{ paddingLeft: 20, lineHeight: 1.9 }}>
+                  <li>在 ChatGPT「设置 → 安全与登录」开启开发者模式。</li>
+                  <li>打开 ChatGPT 插件页，点击 ＋，名称填写 RainForest Navigator，连接地址填写下方地址。</li>
+                  <li>在授权页粘贴上面的线上 MCP 密钥完成授权。</li>
+                </ol>
+                <div className="mcp-copy-row">
+                  <code>{mcpUrl || '/api/mcp'}</code>
+                  <button
+                    type="button"
+                    className="saas-btn-primary"
+                    onClick={() => copyMcpText(mcpUrl, 'MCP 地址已复制')}
+                    disabled={!mcpUrl}
+                  >
+                    复制地址
+                  </button>
+                </div>
+
+                <h3 className="mcp-config-title">本地客户端</h3>
+                <p className="saas-settings-desc">适用于 Codex、Claude Desktop 或命令行脚本，使用同一个线上 MCP 密钥。</p>
+                <div className="mcp-config-block">
+                  <pre>{JSON.stringify({
+                    mcpServers: {
+                      'rainforest-online': {
+                        type: 'http',
+                        url: mcpUrl || '/api/mcp',
+                        headers: { Authorization: 'Bearer <线上 MCP 密钥>' },
+                      },
+                    },
+                  }, null, 2)}</pre>
+                  <button type="button" className="saas-btn-ghost" onClick={copyLocalMcpConfig} disabled={!mcpUrl}>
+                    复制配置
+                  </button>
+                </div>
+
+                <h3 className="mcp-config-title">状态</h3>
+                <ul className="saas-settings-desc" style={{ listStyle: 'none', padding: 0, lineHeight: 2 }}>
+                  <li>最近一次 MCP 调用：{formatMcpTime(mcpState?.lastRequestAt)}</li>
+                  <li>最近一次授权：{formatMcpTime(mcpState?.lastAuthorizeAt)}</li>
+                </ul>
+
+                <div className="mcp-auth-note">
+                  <strong>权限与隔离</strong>
+                  <p>
+                    持有线上 MCP 密钥等同于完整读写权限。OAuth 令牌则严格按授权时授予的范围生效。
+                    线上 MCP 密钥、浏览器插件的访问密钥、后台登录密码三者完全独立，分别轮换互不影响。
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
 
               <div className="pwd-card-wrapper">
                 <div className="pwd-card">

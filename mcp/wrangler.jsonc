@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "rainforest-extension-mcp",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": true },
+  "rules": [{ "type": "Text", "globs": ["**/*.css", "**/*.md"], "fallthrough": true }],
+  "routes": [
+    { "pattern": "mcp.nav.rainforest.org.cn", "custom_domain": true }
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "EXTENSION_BRIDGE", "class_name": "ExtensionBridge" },
+      { "name": "OAUTH_RECORD", "class_name": "OAuthRecord" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["ExtensionBridge"] },
+    { "tag": "v2", "new_sqlite_classes": ["OAuthRecord"] }
+  ]
+}

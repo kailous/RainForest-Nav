@@ -61,7 +61,7 @@ async function saveData(data: { entries: any[] }): Promise<string> {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse): Promise<void> {
-  const authError = getAuth(req);
+  const authError = await getAuth(req);
   if (authError) return res.status(401).json({ error: authError });
 
   try {

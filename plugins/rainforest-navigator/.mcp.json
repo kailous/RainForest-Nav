@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "rainforest-navigator-extension": {
+      "type": "http",
+      "url": "https://mcp.nav.rainforest.org.cn/mcp",
+      "bearer_token_env_var": "RAINFOREST_EXTENSION_TOKEN"
+    }
+  }
+}

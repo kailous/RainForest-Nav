@@ -1,24 +1,36 @@
 import { NextApiRequest, NextApiResponse } from 'next';
+import { timingSafeEqual } from 'crypto';
 import { list } from '@vercel/blob';
 
-async function getCurrentPassword(): Promise<string | null> {
+const PASSWORD_BLOB_PREFIX = 'admin-password';
+
+export function safeEqual(left: string, right: string): boolean {
+  const a = Buffer.from(String(left), 'utf8');
+  const b = Buffer.from(String(right), 'utf8');
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+// Single credential source for the admin console: the Blob-stored password wins,
+// so a rotated password takes effect everywhere. Never used for MCP authentication.
+export async function getCurrentPassword(): Promise<string | null> {
   try {
-    const { blobs } = await list({ prefix: 'admin-password' });
+    const { blobs } = await list({ prefix: PASSWORD_BLOB_PREFIX });
     if (blobs.length > 0) {
-      const res = await fetch(blobs[0].url);
+      const newest = blobs.sort((a, b) => b.uploadedAt.getTime() - a.uploadedAt.getTime())[0];
+      const res = await fetch(newest.url);
       const data = await res.json();
-      return data.password || null;
+      if (data?.password) return String(data.password);
     }
   } catch {}
   return process.env.ADMIN_PASSWORD || null;
 }
 
-export function getAuth(req: NextApiRequest): string | null {
-  const password = process.env.ADMIN_PASSWORD;
-  if (!password) return 'Admin password not configured';
+export async function getAuth(req: NextApiRequest): Promise<string | null> {
+  const expected = await getCurrentPassword();
+  if (!expected) return 'Admin password not configured';
 
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (token !== password) return 'Unauthorized';
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (!token || !safeEqual(token, expected)) return 'Unauthorized';
 
   return null;
 }
@@ -29,12 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { password } = req.body;
+  const password = req.body?.password;
   const currentPwd = await getCurrentPassword();
   if (!currentPwd) return res.status(500).json({ error: 'Password not configured' });
 
-  if (password === currentPwd) {
-    return res.status(200).json({ token: password });
+  if (typeof password === 'string' && safeEqual(password, currentPwd)) {
+    return res.status(200).json({ token: currentPwd });
   }
   return res.status(401).json({ error: 'Wrong password' });
 }
